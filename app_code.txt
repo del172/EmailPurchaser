@@ -1,0 +1,249 @@
+# Email Purchase Manager - Complete Application Code
+
+## 1. Application Structure
+```
+├── app.py                  # Main Flask application
+├── main.py                # Entry point
+├── models.py              # Database models
+├── routes.py             # Route handlers
+├── services/
+│   ├── drive_service.py   # Google Drive integration
+│   ├── sheets_service.py  # Google Sheets integration
+│   ├── logging_service.py # Enhanced logging
+│   ├── email_processor.py # Email processing
+│   ├── gmail_service.py   # Gmail API integration
+│   └── openai_service.py  # OpenAI integration
+└── templates/
+    ├── base.html          # Base template
+    ├── dashboard.html     # Main dashboard
+    └── index.html         # Landing page
+```
+
+## 2. Core Application Files
+
+### app.py
+```python
+import os
+import logging
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from sqlalchemy.orm import DeclarativeBase
+from datetime import timedelta
+
+# Basic logging configuration
+logging.basicConfig(level=logging.DEBUG)
+
+# Allow OAuth2 to work with HTTP in development
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+login_manager = LoginManager()
+
+def create_app():
+    app = Flask(__name__)
+
+    # Basic Configuration
+    app.secret_key = os.environ.get("FLASK_SECRET_KEY", os.urandom(24))
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+    # Database connection pool configuration
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_size": 10,
+        "pool_timeout": 30,
+        "pool_recycle": 1800,
+        "max_overflow": 5,
+        "pool_pre_ping": True,
+    }
+
+    # OAuth Configuration
+    app.config["GOOGLE_CLIENT_ID"] = os.environ.get("EMAIL_MANAGER_GOOGLE_CLIENT_ID")
+    app.config["GOOGLE_CLIENT_SECRET"] = os.environ.get("EMAIL_MANAGER_GOOGLE_CLIENT_SECRET")
+
+    # OpenAI Configuration
+    openai_key = os.environ.get("EMAIL_MANAGER_OPENAI_API_KEY")
+    if not openai_key:
+        app.logger.error("OpenAI API key is not configured")
+        app.config["OPENAI_API_KEY"] = None
+    else:
+        app.logger.info("OpenAI API key is configured")
+        os.environ["OPENAI_API_KEY"] = openai_key
+        app.config["OPENAI_API_KEY"] = openai_key
+
+    # Session configuration
+    app.config["SESSION_COOKIE_NAME"] = "email_manager_session"
+    app.config["SESSION_COOKIE_SECURE"] = True
+    app.config["SESSION_COOKIE_HTTPONLY"] = True
+    app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
+    app.config["SESSION_REFRESH_EACH_REQUEST"] = True
+
+    # Initialize extensions
+    db.init_app(app)
+    login_manager.init_app(app)
+    login_manager.login_view = 'index'
+    login_manager.session_protection = "strong"
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        if not user_id:
+            return None
+        try:
+            from models import User
+            return User.query.get(int(user_id))
+        except Exception as e:
+            app.logger.error(f"Error loading user: {str(e)}")
+            return None
+
+    # Register routes and create database tables
+    with app.app_context():
+        from routes import register_routes
+        register_routes(app)
+
+        try:
+            db.create_all()
+            app.logger.info("Database tables created successfully")
+        except Exception as e:
+            app.logger.error(f"Error creating database tables: {str(e)}")
+            raise
+
+    return app
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
+```
+
+### main.py
+```python
+import os
+import sys
+import logging
+from logging.handlers import RotatingFileHandler
+from app import app
+
+# Configure logging with rotation
+def setup_logging():
+    """Configure logging with rotation, proper formatting, and enhanced OAuth/SSL debugging"""
+    os.makedirs('logs', exist_ok=True)
+
+    # Configure specific loggers for OAuth and SSL debugging
+    logging.getLogger('oauthlib').setLevel(logging.DEBUG)
+    logging.getLogger('requests_oauthlib').setLevel(logging.DEBUG)
+    logging.getLogger('urllib3').setLevel(logging.DEBUG)
+    logging.getLogger('google.auth.transport.requests').setLevel(logging.DEBUG)
+    logging.getLogger('google.oauth2.credentials').setLevel(logging.DEBUG)
+    logging.getLogger('googleapiclient.discovery').setLevel(logging.DEBUG)
+
+    # Configure handlers
+    file_handler = RotatingFileHandler(
+        'logs/oauth_debug.log',
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=5
+    )
+    console_handler = logging.StreamHandler(sys.stdout)
+
+    # Enhanced formatter with more details
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s - '
+        'Process: %(process)d - Thread: %(thread)d'
+    )
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+
+    # Configure root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+    root_logger.addHandler(file_handler)
+    root_logger.addHandler(console_handler)
+
+if __name__ == "__main__":
+    try:
+        # Setup logging first
+        setup_logging()
+        logging.info("Starting Flask application with enhanced OAuth/SSL debugging...")
+
+        # Configure Flask app for external access
+        app.config['SERVER_NAME'] = None
+        app.config['PREFERRED_URL_SCHEME'] = 'https'
+
+        # Start server with proper host binding and error handling
+        app.run(
+            host="0.0.0.0",  # Bind to all interfaces
+            port=5000,
+            debug=True,
+            use_reloader=False  # Disable reloader in Replit environment
+        )
+
+    except Exception as e:
+        logging.error(f"Failed to start Flask server: {str(e)}", exc_info=True)
+        sys.exit(1)
+```
+
+### services/drive_service.py
+```python
+[Content of drive_service.py]
+```
+
+### services/sheets_service.py
+```python
+[Content of sheets_service.py]
+```
+
+### services/logging_service.py
+```python
+[Content of logging_service.py]
+```
+
+### templates/dashboard.html
+```html
+[Content of dashboard.html]
+```
+
+## 3. Dependencies (pyproject.toml)
+```toml
+[project]
+name = "repl-nix-workspace"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.11"
+dependencies = [
+    "email-validator>=2.2.0",
+    "flask-login>=0.6.3",
+    "flask>=3.1.0",
+    "flask-sqlalchemy>=3.1.1",
+    "gunicorn>=23.0.0",
+    "openai>=1.61.1",
+    "psycopg2-binary>=2.9.10",
+    "routes>=2.5.1",
+    "sqlalchemy>=2.0.38",
+    "oauthlib>=3.2.2",
+    "requests>=2.32.3",
+    "google-auth>=2.38.0",
+    "google-api-python-client>=2.160.0",
+    "google-auth-oauthlib>=1.2.1",
+    "flask-wtf>=1.2.2",
+    "twilio>=9.4.4",
+    "google-auth-httplib2>=0.2.0",
+    "sendgrid>=6.11.0",
+    "trafilatura>=2.0.0",
+    "psutil>=7.0.0",
+    "requests-oauthlib>=1.3.1",
+]
+```
+
+## 4. Environment Configuration
+Required environment variables:
+- FLASK_SECRET_KEY
+- DATABASE_URL
+- EMAIL_MANAGER_GOOGLE_CLIENT_ID
+- EMAIL_MANAGER_GOOGLE_CLIENT_SECRET
+- EMAIL_MANAGER_OPENAI_API_KEY
+
+SSL Configuration is handled through the system's default SSL certificate store.

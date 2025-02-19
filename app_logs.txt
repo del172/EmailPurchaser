@@ -1,0 +1,74 @@
+# Email Purchase Manager - Complete Application Logs
+Last Updated: February 19, 2025
+
+## 1. Server Logs
+=== OAuth and SSL Debug Logs ===
+```
+INFO:root:Starting Drive service initialization...
+2025-02-19 20:21:39,692 - root - INFO - Starting Drive service initialization... - Process: 2097 - Thread: 139726676989632
+INFO:root:Creating credentials from dictionary
+2025-02-19 20:21:39,692 - root - INFO - Creating credentials from dictionary - Process: 2097 - Thread: 139726676989632
+INFO:root:Available scopes: ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly']
+2025-02-19 20:21:39,693 - root - INFO - Available scopes: ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly'] - Process: 2097 - Thread: 139726676989632
+
+DEBUG:urllib3.util.retry:Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+2025-02-19 20:21:39,693 - urllib3.util.retry - DEBUG - Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None) - Process: 2097 - Thread: 139726676989632
+
+INFO:root:Building Drive service with authorized session
+2025-02-19 20:21:39,693 - root - INFO - Building Drive service with authorized session - Process: 2097 - Thread: 139726676989632
+
+INFO:googleapiclient.discovery_cache:file_cache is only supported with oauth2client<4.0.0
+2025-02-19 20:21:39,694 - googleapiclient.discovery_cache - INFO - file_cache is only supported with oauth2client<4.0.0 - Process: 2097 - Thread: 139726676989632
+
+INFO:root:Testing Drive API connection...
+2025-02-19 20:21:39,695 - root - INFO - Testing Drive API connection... - Process: 2097 - Thread: 139726676989632
+
+DEBUG:googleapiclient.discovery:URL being requested: GET https://www.googleapis.com/drive/v3/files?pageSize=1&fields=files%28id%2C+name%29&alt=json
+2025-02-19 20:21:39,699 - googleapiclient.discovery - DEBUG - URL being requested: GET https://www.googleapis.com/drive/v3/files?pageSize=1&fields=files%28id%2C+name%29&alt=json - Process: 2097 - Thread: 139726676989632
+
+INFO:root:Drive API connection test successful
+2025-02-19 20:21:39,784 - root - INFO - Drive API connection test successful - Process: 2097 - Thread: 139726668596928
+
+INFO:root:Drive service initialized successfully
+2025-02-19 20:21:39,785 - root - INFO - Drive service initialized successfully - Process: 2097 - Thread: 139726668596928
+
+INFO:root:Starting Sheets service initialization...
+2025-02-19 20:21:39,786 - root - INFO - Starting Sheets service initialization... - Process: 2097 - Thread: 139726668596928
+
+INFO:root:Available scopes in credentials: ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly']
+2025-02-19 20:21:39,786 - root - INFO - Available scopes in credentials: ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly'] - Process: 2097 - Thread: 139726668596928
+```
+
+## 2. Application Error Logs
+=== SSL and Authentication Errors ===
+```
+ssl.SSLError: [SSL] record layer failure (_ssl.c:2580)
+ERROR:root:Error setting up user folders: [SSL] record layer failure (_ssl.c:2580)
+```
+
+## 3. Email Processing Logs
+=== Drive Folder Setup Issues ===
+```
+ERROR:root:Failed to initialize Drive service: [SSL] record layer failure (_ssl.c:2580)
+ERROR:root:Drive folder setup failed, but you can still use the application
+ERROR:root:Failed to start processing
+```
+
+## 4. OAuth Debug Logs
+=== Token Exchange and API Calls ===
+```
+DEBUG:urllib3.util.retry:Converted retries value: 3 -> Retry(total=3, connect=None, read=None, redirect=None, status=None)
+DEBUG:googleapiclient.discovery:URL being requested: GET https://www.googleapis.com/drive/v3/files?pageSize=1&fields=files%28id%2C+name%29&alt=json
+```
+
+## 5. Current Issues Identified
+1. SSL record layer failures during API calls
+2. Drive folder setup failures
+3. Processing initialization failures
+4. OAuth2 token exchange issues
+
+## 6. Environment Information
+- Python Version: 3.11
+- SSL Library Version: OpenSSL 3.0.13
+- Operating System: Linux
+- Application State: Partially functional with authentication issues
