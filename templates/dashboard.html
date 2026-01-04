@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header mb-4">
+  <div class="row align-items-center g-3">
+    <div class="col-lg-8">
+      <h1 class="fw-bold mb-2">Purchase Intelligence Inbox</h1>
+      <p class="text-muted mb-0">
+        Every message shown below contains a receipt, invoice, or payment confirmation. Promotions are filtered out.
+      </p>
+    </div>
+    <div class="col-lg-4 text-lg-end">
+      <div class="pill d-inline-flex align-items-center">
+        Last refreshed {{ last_refreshed.strftime('%Y-%m-%d %H:%M UTC') }}
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-4">
+    <div class="card p-4 h-100">
+      <div class="text-muted text-uppercase small mb-2">Purchases Captured</div>
+      <div class="kpi-value">{{ summary.count }}</div>
+      <div class="text-muted">Receipts and invoices matched</div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card p-4 h-100">
+      <div class="text-muted text-uppercase small mb-2">Total Spend</div>
+      <div class="kpi-value">${{ '%.2f'|format(summary.total_spent) }}</div>
+      <div class="text-muted">Sum of detected totals</div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card p-4 h-100">
+      <div class="text-muted text-uppercase small mb-2">Top Vendors</div>
+      {% if summary.vendors %}
+        <div class="d-flex flex-wrap gap-2 mt-1">
+          {% for vendor, count in summary.vendors.items() %}
+            <span class="badge badge-soft rounded-pill px-3 py-2">{{ vendor }} • {{ count }}</span>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-muted">No vendors yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="card p-4">
+  <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-3 gap-2">
+    <div>
+      <h4 class="mb-1">Verified Purchase Inbox</h4>
+      <p class="text-muted mb-0">Only transactions with totals, confirmations, or invoice IDs appear here.</p>
+    </div>
+    <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-2">Purchase-only view</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-borderless align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">Vendor</th>
+          <th scope="col">Subject</th>
+          <th scope="col">Date</th>
+          <th scope="col" class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for email in purchases %}
+          <tr class="border-top">
+            <td class="fw-semibold">{{ email.from or 'Unknown' }}</td>
+            <td>
+              <div class="fw-semibold">{{ email.subject }}</div>
+              <div class="text-muted small">{{ email.snippet }}</div>
+            </td>
+            <td>
+              {% if email.date %}
+                {{ email.date.strftime('%Y-%m-%d %H:%M') }}
+              {% else %}
+                <span class="text-muted">Unknown</span>
+              {% endif %}
+            </td>
+            <td class="text-end fw-semibold">
+              {% if email.total is not none %}
+                ${{ '%.2f'|format(email.total) }}
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="4" class="text-center py-4 text-muted">No purchase emails found.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
